@@ -100,8 +100,11 @@ function spawnFloatingAvatar(url, uid) {
             neon: neonColor,
             x: Math.random() * canvas.width,
             y: Math.random() * canvas.height,
-            vx: (Math.random() * 6 - 3),
-            vy: (Math.random() * 6 - 3),
+
+            // 🔥 VITEZĂ REDUSĂ ȘI FLUIDĂ
+            vx: (Math.random() * 2 - 1),   // între -1 și +1
+            vy: (Math.random() * 2 - 1),
+
             size: 120
         });
     });
@@ -138,7 +141,7 @@ function repelAvatars() {
 
             if (dist < 140) {
                 const angle = Math.atan2(dy, dx);
-                const force = 2.5;
+                const force = 1.5; // redus pentru viteză mică
 
                 a.vx -= Math.cos(angle) * force;
                 a.vy -= Math.sin(angle) * force;
