@@ -1,0 +1,258 @@
+ <!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+    body { margin: 0; overflow: hidden; background: transparent; }
+
+    #canvas { position: absolute; top: 0; left: 0; }
+    #fx { position: absolute; width: 100%; height: 100%; pointer-events: none; }
+
+    /* Avatar mare, pătrat + RAMĂ COLORATĂ */
+    .big-profile {
+        position: absolute;
+        width: 260px;
+        height: 260px;
+        border-radius: 22px;
+        object-fit: cover;
+        border: 10px solid transparent;
+        animation: bigProfile 3s ease-out forwards;
+    }
+
+    @keyframes bigProfile {
+        0% { transform: scale(0.4); opacity: 0; }
+        30% { transform: scale(1.15); opacity: 1; }
+        100% { transform: scale(1); opacity: 0; }
+    }
+
+    /* NUME SUB AVATAR MARE */
+    .big-name {
+        position: absolute;
+        font-size: 48px;
+        font-weight: 900;
+        text-align: center;
+        width: 100%;
+        left: 0;
+        top: calc(50% + 170px);
+        color: white;
+        text-shadow: 0 0 10px #fff;
+        animation: nameFade 3s ease-out forwards;
+    }
+
+    @keyframes nameFade {
+        0% { opacity: 0; transform: scale(0.8); }
+        30% { opacity: 1; transform: scale(1.1); }
+        100% { opacity: 0; transform: scale(1.2); }
+    }
+</style>
+</head>
+
+<body>
+<canvas id="canvas"></canvas>
+<div id="fx"></div>
+
+<script>
+const canvas = document.getElementById("canvas");
+const ctx = canvas.getContext("2d");
+
+function resize() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+}
+resize();
+window.onresize = resize;
+
+// DOAR UN AVATAR PER USER
+const floatingUsers = new Set();
+
+// LISTA AVATARELOR
+let objects = [];
+
+// CACHE POZE PROFIL
+const profileCache = {};
+
+function loadProfile(url, callback) {
+    if (!url) return;
+    if (profileCache[url]) return callback(profileCache[url]);
+
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.onload = () => {
+        profileCache[url] = img;
+        callback(img);
+    };
+    img.src = url;
+}
+
+// UN SINGUR AVATAR PER USER + CERC NEON DIFERIT
+function spawnFloatingAvatar(url, uid) {
+    if (!url || !uid) return;
+    if (floatingUsers.has(uid)) return;
+
+    floatingUsers.add(uid);
+
+    loadProfile(url, (img) => {
+        const neonColor = `hsl(${Math.random()*360}, 100%, 50%)`;
+
+        objects.push({
+            uid: uid,
+            img: img,
+            neon: neonColor,
+            x: Math.random() * canvas.width,
+            y: Math.random() * canvas.height,
+            vx: (Math.random() * 4 - 2),   // viteza mai mare
+            vy: (Math.random() * 4 - 2),
+            size: 120
+        });
+    });
+}
+
+// CERC NEON FĂRĂ GLOW
+function drawCircleImage(ctx, img, x, y, size, neonColor) {
+    ctx.save();
+
+    ctx.beginPath();
+    ctx.arc(x, y, size/2 + 5, 0, Math.PI * 2);
+    ctx.strokeStyle = neonColor;
+    ctx.lineWidth = 5;
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.arc(x, y, size/2, 0, Math.PI * 2);
+    ctx.clip();
+    ctx.drawImage(img, x - size/2, y - size/2, size, size);
+
+    ctx.restore();
+}
+
+// RESPINGERE AVATARE
+function repelAvatars() {
+    for (let i = 0; i < objects.length; i++) {
+        for (let j = i + 1; j < objects.length; j++) {
+            const a = objects[i];
+            const b = objects[j];
+
+            const dx = b.x - a.x;
+            const dy = b.y - a.y;
+            const dist = Math.sqrt(dx*dx + dy*dy);
+
+            if (dist < 140) { // distanță minimă
+                const angle = Math.atan2(dy, dx);
+                const force = 1.5; // putere respingere
+
+                a.vx -= Math.cos(angle) * force;
+                a.vy -= Math.sin(angle) * force;
+
+                b.vx += Math.cos(angle) * force;
+                b.vy += Math.sin(angle) * force;
+            }
+        }
+    }
+}
+
+// LOOP CANVAS
+let lastFrame = 0;
+function loop(ts) {
+    if (ts - lastFrame < 33) {
+        requestAnimationFrame(loop);
+        return;
+    }
+    lastFrame = ts;
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    repelAvatars();
+
+    for (const o of objects) {
+        o.x += o.vx;
+        o.y += o.vy;
+
+        if (o.x < 0 || o.x > canvas.width) o.vx *= -1;
+        if (o.y < 0 || o.y > canvas.height) o.vy *= -1;
+
+        ctx.save();
+        ctx.translate(o.x, o.y);
+        drawCircleImage(ctx, o.img, 0, 0, o.size, o.neon);
+        ctx.restore();
+    }
+
+    requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+
+// EXTRAGERE POZĂ PROFIL
+function getProfileUrl(data) {
+    return data.profilePictureUrl ||
+           data.userDetails?.profilePictureUrls?.[0] ||
+           null;
+}
+
+// AVATAR MARE + NUME + RAMĂ COLORATĂ
+function spawnBigProfile(url, username) {
+    if (!url) return;
+
+    const fx = document.getElementById("fx");
+
+    const img = document.createElement("img");
+    img.src = url;
+    img.className = "big-profile";
+
+    img.style.borderColor = `hsl(${Math.random()*360}, 100%, 50%)`;
+
+    img.style.left = (window.innerWidth/2 - 130) + "px";
+    img.style.top = (window.innerHeight/2 - 130) + "px";
+    fx.appendChild(img);
+
+    const name = document.createElement("div");
+    name.className = "big-name";
+    name.innerText = username;
+    fx.appendChild(name);
+
+    setTimeout(() => {
+        img.remove();
+        name.remove();
+    }, 3000);
+}
+
+// WEBSOCKET INDOFINITY
+const ws = new WebSocket("ws://localhost:62024");
+
+ws.onmessage = (event) => {
+    let packet;
+    try { packet = JSON.parse(event.data); } catch(e) { return; }
+
+    const data = packet.data || {};
+
+    const uid = data.secUid || data.userId || data.uniqueId;
+    const profileUrl = getProfileUrl(data);
+    const username = data.nickname || data.uniqueId || "User";
+
+    if (!uid) return;
+
+    if (packet.event === "like") {
+        spawnFloatingAvatar(profileUrl, uid);
+        return;
+    }
+
+    if (packet.event === "chat") {
+        spawnFloatingAvatar(profileUrl, uid);
+        return;
+    }
+
+    if (packet.event === "member") {
+        spawnBigProfile(profileUrl, username);
+        spawnFloatingAvatar(profileUrl, uid);
+        return;
+    }
+
+    if (packet.event === "gift") {
+        spawnBigProfile(profileUrl, username);
+        spawnFloatingAvatar(profileUrl, uid);
+        return;
+    }
+};
+</script>
+
+</body>
+</html>
+
