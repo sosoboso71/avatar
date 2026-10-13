@@ -8,14 +8,14 @@
     #canvas { position: absolute; top: 0; left: 0; }
     #fx { position: absolute; width: 100%; height: 100%; pointer-events: none; }
 
-    /* Avatar mare, pătrat + RAMĂ COLORATĂ (dublu ca mărime) */
+    /* Avatar mare, pătrat + RAMĂ COLORATĂ (700px) */
     .big-profile {
         position: absolute;
-        width: 520px;
-        height: 520px;
-        border-radius: 30px;
+        width: 700px;
+        height: 700px;
+        border-radius: 40px;
         object-fit: cover;
-        border: 14px solid transparent;
+        border: 18px solid transparent;
         animation: bigProfile 3s ease-out forwards;
     }
 
@@ -25,15 +25,15 @@
         100% { transform: scale(1); opacity: 0; }
     }
 
-    /* NUME SUB AVATAR MARE */
+    /* NUME SUB AVATAR MARE (ajustat pentru 700px) */
     .big-name {
         position: absolute;
-        font-size: 58px;
+        font-size: 62px;
         font-weight: 900;
         text-align: center;
         width: 100%;
         left: 0;
-        top: calc(50% + 330px);
+        top: calc(50% + 450px);
         color: white;
         text-shadow: 0 0 10px #fff;
         animation: nameFade 3s ease-out forwards;
@@ -102,7 +102,7 @@ function spawnFloatingAvatar(url, uid) {
             y: Math.random() * canvas.height,
 
             // 🔥 VITEZĂ REDUSĂ ȘI FLUIDĂ
-            vx: (Math.random() * 2 - 1),   // între -1 și +1
+            vx: (Math.random() * 2 - 1),
             vy: (Math.random() * 2 - 1),
 
             size: 120
@@ -141,7 +141,7 @@ function repelAvatars() {
 
             if (dist < 140) {
                 const angle = Math.atan2(dy, dx);
-                const force = 1.5; // redus pentru viteză mică
+                const force = 1.5;
 
                 a.vx -= Math.cos(angle) * force;
                 a.vy -= Math.sin(angle) * force;
@@ -214,7 +214,7 @@ function getProfileUrl(data) {
            null;
 }
 
-// AVATAR MARE + NUME + RAMĂ COLORATĂ
+// AVATAR MARE + NUME + RAMĂ COLORATĂ (700px)
 function spawnBigProfile(url, username) {
     if (!url) return;
 
@@ -226,8 +226,8 @@ function spawnBigProfile(url, username) {
 
     img.style.borderColor = `hsl(${Math.random()*360}, 100%, 50%)`;
 
-    img.style.left = (window.innerWidth/2 - 260) + "px";
-    img.style.top = (window.innerHeight/2 - 260) + "px";
+    img.style.left = (window.innerWidth/2 - 350) + "px"; /* 700/2 */
+    img.style.top = (window.innerHeight/2 - 350) + "px";
     fx.appendChild(img);
 
     const name = document.createElement("div");
